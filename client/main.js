@@ -162,7 +162,7 @@ function getWordsProvider() {
       break;
   };
 
-  let minimumWordsInCategory = 10;
+  let minimumWordsInCategory = 16;
 
   let excludedCategories = [];
 
@@ -187,13 +187,30 @@ function getWordsProvider() {
   return filteredWords;
 }
 
-function getRandomWordAndCategory() {
+function getRandomWords() {
   let filteredWords = getWordsProvider();
   let wordIndex = Math.floor(Math.random() * filteredWords.length);
 
-  return filteredWords[wordIndex];
+  let chosenCategory = filteredWords[wordIndex].category;
+  let wordsFromChosenCategory = filteredWords.filter(word => word.category == chosenCategory);
+
+  wordsFromChosenCategory = shuffle(wordsFromChosenCategory);
+  let chosenWords = wordsFromChosenCategory.slice(0,16);
+  let words = chosenWords.map(word => word.text);
+  words = Array.from(words);
+  let secretWordIndex = Math.floor(Math.random() * words.length);
+  let secretWord = words[secretWordIndex]
+
+
+  let result = {
+    texts: words,
+    secretWord: secretWord
+  };
+
+  return result;
 }
 
+// TODO check if this is used, or better than Shuffle somehow
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     let j = Math.floor(Math.random() * (i + 1));
@@ -517,6 +534,8 @@ Template.lobby.helpers({
 
 Template.lobby.events({
   'click .btn-leave': leaveGame,
+
+  // TODO Maybe this can be deleted, not sure if we want to permit user words
   'click .btn-submit-user-word': function (event) {
     let game = getCurrentGame();
     let word = document.getElementById("user-word").value;
@@ -643,13 +662,13 @@ Template.lobby.events({
   'click .btn-start': function () {
 
     let game = getCurrentGame();
-    let wordAndCategory = getRandomWordAndCategory();
+    let words = getRandomWords();
     
     let currentPlayers = Array.from(Players.find({ gameID: game._id }));
     let localEndTime = moment().add(game.lengthInMinutes, 'minutes');
     let gameEndTime = TimeSync.serverTime(localEndTime);
 
-    let fakeArtistIndex = Math.floor(Math.random() * currentPlayers.length);
+    let chameleonIndex = Math.floor(Math.random() * currentPlayers.length);
     let firstPlayerIndex = Math.floor(Math.random() * currentPlayers.length);
 
     let turnOrders = []
@@ -665,8 +684,7 @@ Template.lobby.events({
     currentPlayers.forEach(function (player, index) {
       Players.update(player._id, {
         $set: {
-          isQuestionMaster: false,
-          isFakeArtist: index === fakeArtistIndex,
+          isChameleon: index === chameleonIndex,
           isFirstPlayer: index === firstPlayerIndex,
           turnOrder: turnOrders[index] + 1,
         }
@@ -674,54 +692,8 @@ Template.lobby.events({
     });
 
     currentPlayers.forEach(function (player) {
-      Players.update(player._id, { $set: { category: wordAndCategory.category } });
+      Players.update(player._id, { $set: { words:  words.texts, secretWord: words.secretWord } });
     });
-
-    // All Fake Artist Variant
-    let shouldPlayAllFakeArtistsVariant = document.getElementById("use-all-fake-artists-variant").checked;
-
-    let percentEveryoneIsAFakeArtist = 10;
-    let isEveryoneAFakeArtist = Math.floor(Math.random() * 100) < percentEveryoneIsAFakeArtist;
-
-    if(shouldPlayAllFakeArtistsVariant === true && isEveryoneAFakeArtist === true){
-      currentPlayers.forEach(function (player) {
-        if(player.isQuestionMaster === false){
-          Players.update(player._id, {
-            $set: {
-              isFakeArtist: true,
-            }
-          });
-        }
-      });
-    }
-    // All Fake Artists variant ends
-
-    // No Fake Artist Variant
-    let shouldPlayNoFakeArtistsVariant = document.getElementById("use-no-fake-artist-variant").checked;
-
-    let percentNoFakeArtist = 10;
-    let isNoFakeArtist = Math.floor(Math.random() * 100) < percentNoFakeArtist;
-
-    if(shouldPlayNoFakeArtistsVariant === true && isNoFakeArtist === true){
-      currentPlayers.forEach(function (player) {
-        if(player.isQuestionMaster === false){
-          Players.update(player._id, {
-            $set: {
-              isFakeArtist: false,
-            }
-          });
-        }
-      });
-    }
-    // No Fake Artist Variant ends
-
-    let variantsUsed = [];
-    if(shouldPlayNoFakeArtistsVariant === true){
-      variantsUsed.push("no fake-artist");
-    }
-    if(shouldPlayAllFakeArtistsVariant === true){
-      variantsUsed.push("all fake-artists");
-    }
 
     // Track game analytics
     let gameAnalytics = {
@@ -730,15 +702,14 @@ Template.lobby.events({
       gameType: "game-word",
       language: Session.get("language"),
       languageType: "Chosen",
-      variants: variantsUsed
     };
 
     Analytics.insert(gameAnalytics);
 
-    Games.update(game._id, { $set: { state: 'inProgress', word: wordAndCategory, endTime: gameEndTime, paused: false, pausedTime: null } });
+    Games.update(game._id, { $set: { state: 'inProgress', words: words, endTime: gameEndTime, paused: false, pausedTime: null } });
   },
   'click #copyAccessLinkImg': function () {
-    let accessLink = "https://fake-artist.herokuapp.com/" + getAccessLink();
+    let accessLink = "https://chameleon.herokuapp.com/" + getAccessLink();
 
     const textArea = document.createElement("textarea");
     textArea.value = accessLink;
@@ -782,7 +753,7 @@ Template.lobby.events({
 
 Template.lobby.rendered = function (event) {
   let url = getAccessLink();
-  url = "https://fake-artist.herokuapp.com/" + url;
+  url = "https://chameleon.herokuapp.com/" + url;
   let qrcodesvg = new Qrcodesvg(url, "qrcode", 250);
   qrcodesvg.draw();
 };

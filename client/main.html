@@ -1,6 +1,6 @@
 ﻿<head>
   <meta charset="utf-8">
-  <title>A Fake Artist Goes to New York</title>
+  <title>Chameleon</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <link href="https://fonts.googleapis.com/css?family=Alef|Oswald|Open+Sans" rel="stylesheet" async media="none"
@@ -47,7 +47,7 @@
 
 <template name="startMenu">
   <div class="main-menu">
-    <h4>{{_ "ui.welcome to fake artist" }}</h4>
+    <h4>{{_ "ui.welcome to the chameleon" }}</h4>
     <img src="/img/{{_ "ui.logo-file"}}" class="logo" id="logo">
 
     <hr>
@@ -59,6 +59,9 @@
     </div>
     <div>
       <a href="https://insider-online.herokuapp.com"><strong>{{_ "ui.try insider"}}</strong></a>
+    </div>
+    <div>
+      <a href="https://fake-artist.herokuapp.com"><strong>{{_ "ui.try fake-artist"}}</strong></a>
     </div>
     {{# if alternativeURL }}
     <p class="high-load-message">The site is currently experiencing very heavy load. If things seem slow or broken, try
@@ -103,7 +106,7 @@
     <div id="qrcode" class="qrcode"></div>
 
     <div id="access-link" class="access-link">
-      <a href="{{ accessLink }}">https://fake-artist.herokuapp.com/{{ accessLink }}</a>
+      <a href="{{ accessLink }}">https://chameleon.herokuapp.com/{{ accessLink }}</a>
     </div>
   </div>
   <hr>
@@ -127,29 +130,6 @@
   </ol>
 
   <hr>
-
-  <div class="variants-container">
-    <h4>Variants</h4>
-    <div class="variant">
-      <div class="tooltip">
-        <span class="tooltiptext" id="playWithAllFakeArtistsTooltip">{{_ "ui.all fake artists tooltip" }}</span>
-          <label for="use-all-fake-artists-variant" id="all-fake-artists-variant-label">
-            <input type="checkbox" id="use-all-fake-artists-variant">
-            {{{_ "ui.play with the all fake-artists variant"}}}
-          </label>
-      </div>
-    </div>
-    <div class="variant">
-      <div class="tooltip">
-        <span class="tooltiptext" id="playWithNoFakeArtistTooltip">{{_ "ui.no fake-artist tooltip" }}</span>
-          <label for="use-no-fake-artist-variant" id="no-fake-artist-label">
-            <input type="checkbox" id="use-no-fake-artist-variant">
-            {{{_ "ui.play with the no-fake-artist variant"}}}
-          </label>
-      </div>
-    </div>
-  </div>
-
   <table>
     <tr>
       <td>
@@ -169,7 +149,6 @@
         {{_ "ui.let us choose"}}
       </td>
       <td>
-
 
         <button class="btn-start">{{_ "ui.start game" }}</button>
 
@@ -194,53 +173,48 @@
     <table>
       <tr>
         <td class="status-container-content">
-          {{#if player.isFakeArtist }}
-          <img src="/img/fake-artist.png" width=80px height=80px>
+          {{#if player.isChameleon }}
+            <img src="/img/chameleon.png" width=80px height=80px>
           {{else }}
-          {{#if player.isQuestionMaster }}
-          <img src="/img/presentor.png" width=80px height=80px>
-          {{else }}
-          <img src="/img/real-artist.png" width=80px height=80px>
-          {{/if}}
+            <img src="/img/regular.png" width=80px height=80px>
           {{/if}}
         </td>
         <td>
           <div class="status-container-content">
-            {{#if player.isFakeArtist }}
-            <div class="player-status player-status-fake-artist"> {{_ "ui.you are the fake artist" }}</div>
+            {{#if player.isChameleon }}
+            <div class="player-status player-status-chameleon"> {{_ "ui.you are the chameleon" }}</div>
             <div class="current-role">
               <div class="current-role-header">
-                {{_ "ui.your category" }}:
+                {{_ "ui.the category" }}:
               </div>
               <div class="current-role-name">
                 <strong>{{_ player.category }}</strong>
               </div>
             </div>
             {{else}}
-            {{#if player.isQuestionMaster }}
-            <div class="player-status player-status-question-master">{{{_ "ui.you are the question master" }}}</div>
-            {{else}}
-            <div class="player-status player-status-not-fake-artist">{{{_ "ui.you are not the fake artist" }}}</div>
-            {{/if}}
+              <div class="player-status player-status-not-chameleon">{{{_ "ui.you are not the chameleon" }}}</div>
 
-            <div class="current-word">
-              <div class="current-word-header">
-                {{_ "ui.the word" }}:
+                <div class="current-word">
+                  <div class="current-word-header">
+                    {{_ "ui.the word" }}:
+                  </div>
+                  <div class="current-word-text">
+                    <strong>{{toCapitalCase game.secretWord  }}</strong>
+                  </div>
+                </div>
+                {{/if}}
+                {{#each game.words }}
+                  insert wordlist here
+              <div class="current-category">
+                <div class="current-category-header">
+                  {{_ "ui.the category" }}:
+                </div>
+                <div class="current-category-text">
+                  {{toCapitalCase texts }}
+                </div>
               </div>
-              <div class="current-word-text">
-                <strong>{{toCapitalCase game.word.text  }}</strong>
-              </div>
-            </div>
+              {{/each}}
 
-            <div class="current-category">
-              <div class="current-category-header">
-                {{_ "ui.your category" }}:
-              </div>
-              <div class="current-category-text">
-                {{toCapitalCase player.category }}
-              </div>
-            </div>
-            {{/if}}
           </div>
         </td>
       </tr>
@@ -253,11 +227,7 @@
     <li>
       <div class="player-name">
         {{ name }}
-        {{#if isQuestionMaster }}
-        <div class="first-player-indicator">{{_ "ui.question master indicator" }}</div>
-        {{else}}
         <div class="first-player-indicator">{{ turnOrder }}</div>
-        {{/if}}
       </div>
     </li>
     {{/each}}
@@ -290,7 +260,7 @@
     {{#if isLoading }}
     <span class="spinner"></span>
     {{else}}
-    {{_ "ui.welcome to fake artist" }}
+    {{_ "ui.welcome to the chameleon" }}
     {{/if}}
   </h4>
 
@@ -313,7 +283,7 @@
     {{#if isLoading }}
     <span class="spinner"></span>
     {{else}}
-    {{_ "ui.welcome to fake artist" }}
+    {{_ "ui.welcome to the chameleon" }}
     {{/if}}
   </h4>
 
@@ -355,7 +325,7 @@
 
   <div class="footer">
     {{_ "ui.credits"}}
-    <a href="http://oinkgms.com/">Oink Games</a>
+    <a href="https://www.boardgamegeek.com/boardgame/227072/chameleon/">Rikki Tahta</a>
     <BR>
     {{_ "ui.footer"}}
   </div>
