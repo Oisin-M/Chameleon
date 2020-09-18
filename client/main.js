@@ -1,389 +1,135 @@
-﻿Handlebars.registerHelper('toCapitalCase', function (str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-});
-
-function initUserLanguage() {
-  let language = amplify.store("language");
-
-  if (language) {
-    Session.set("language", language);
-  }
-  let userLanguage = getUserLanguage()
-  setUserLanguage(userLanguage);
-}
-
-function getUserLanguage() {
-  let language = Session.get("language");
-
-  if (language) {
-    return language;
-  } else {
-    return "en";
-  }
-};
-
-function setUserLanguage(language) {
-  TAPi18n.setLanguage(language).done(function () {
-    Session.set("language", language);
-    amplify.store("language", language);
-  });
-}
-
-function getLanguageDirection() {
-  let language = getUserLanguage()
-  let rtlLanguages = ['he', 'ar'];
-
-  if ($.inArray(language, rtlLanguages) !== -1) {
-    return 'rtl';
-  } else {
-    return 'ltr';
-  }
-}
-
-function shuffle(a) {
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function getLanguageList() {
-  let languages = TAPi18n.getLanguages();
-  let languageList = _.map(languages, function (value, key) {
-    let selected = "";
-
-    if (key == getUserLanguage()) {
-      selected = "selected";
-    }
-
-    // Gujarati isn't handled automatically by tap-i18n,
-    // so we need to set the language name manually
-    if (value.name == "gu") {
-      value.name = "ગુજરાતી";
-    }
-
-    return {
-      code: key,
-      selected: selected,
-      languageDetails: value
-    };
-  });
-
-  if (languageList.length <= 1) {
-    return null;
-  }
-
-  return languageList;
-}
-
-function getCurrentGame() {
-  let gameID = Session.get("gameID");
-
-  if (gameID) {
-    return Games.findOne(gameID);
-  }
-}
-
-function getAccessLink() {
-  let game = getCurrentGame();
-
-  if (!game) {
-    return;
-  }
-
-  return game.accessCode + "/";
-}
-
-function getCurrentPlayer() {
-  let playerID = Session.get("playerID");
-
-  if (playerID) {
-    return Players.findOne(playerID);
-  }
-}
-
-function generateAccessCode() {
-  let accessCodeLength = 5;
-  let accessCode = "";
-
-  for (var i = 0; i < accessCodeLength; i++) {
-    let randomDigit = Math.floor(Math.random() * 10);
-    accessCode = accessCode + randomDigit;
-  }
-
-  return accessCode;
-}
-
-function generateNewGame() {
-  let game = {
-    accessCode: generateAccessCode(),
-    state: "waitingForPlayers",
-    word: null,
-    lengthInMinutes: 10,
-    endTime: null,
-    paused: false,
-    pausedTime: null
-  };
-
-  let gameID = Games.insert(game);
-  game = Games.findOne(gameID);
-
-  return game;
-}
-
-function generateNewPlayer(game, name) {
-  let player = {
-    gameID: game._id,
-    name: name,
-    category: null,
-    isQuestionMaster: false,
-    isFakeArtist: false,
-    isFirstPlayer: false
-  };
-
-  let playerID = Players.insert(player);
-
-  return Players.findOne(playerID);
-}
-
-function getWordsProvider() {
-  let words = [];
-
-  switch (getUserLanguage()) {
-    case "he":
-      words = words_he;
-      break;
-    case "en":
-      words = words_en;
-      break;
-    default:
-      words = words_en;
-      break;
-  };
-
-  let minimumWordsInCategory = 16;
-
-  let excludedCategories = [];
-
-
-  let filteredWords = words.filter(word => !excludedCategories.includes(word.category.toLowerCase()));
-
-  let categoryToOccurences = {};
-
-  filteredWords.forEach(word => {
-    let wordOccurence = categoryToOccurences[word.category];
-    if (wordOccurence === undefined) {
-      wordOccurence = 1;
-    }
-    else {
-      wordOccurence = wordOccurence + 1;
-    }
-    categoryToOccurences[word.category] = wordOccurence;
-  });
-
-  filteredWords = filteredWords.filter(word => categoryToOccurences[word.category] >= minimumWordsInCategory);
-
-  return filteredWords;
-}
-
-function getRandomWords() {
-  let filteredWords = getWordsProvider();
-  let wordIndex = Math.floor(Math.random() * filteredWords.length);
-
-  let chosenCategory = filteredWords[wordIndex].category;
-  let wordsFromChosenCategory = filteredWords.filter(word => word.category == chosenCategory);
-
-  wordsFromChosenCategory = shuffle(wordsFromChosenCategory);
-  let chosenWords = wordsFromChosenCategory.slice(0,16);
-  let words = chosenWords.map(word => word.text);
-  words = Array.from(words);
-  let secretWordIndex = Math.floor(Math.random() * words.length);
-  let secretWord = words[secretWordIndex]
-
-
-  let result = {
-    texts: words,
-    secretWord: secretWord
-  };
-
-  return result;
-}
-
-// TODO check if this is used, or better than Shuffle somehow
-function shuffleArray(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    let j = Math.floor(Math.random() * (i + 1));
-    let temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
-  }
-  return array;
-}
-
-function resetUserState() {
-  let player = getCurrentPlayer();
-
-  if (player) {
-    Players.remove(player._id);
-  }
-
-  Session.set("gameID", null);
-  Session.set("playerID", null);
-}
-
-function trackGameState() {
-  let gameID = Session.get("gameID");
-  let playerID = Session.get("playerID");
-
-  if (!gameID || !playerID) {
-    return;
-  }
-
-  let game = Games.findOne(gameID);
-  let player = Players.findOne(playerID);
-
-  if (!game || !player) {
-    Session.set("gameID", null);
-    Session.set("playerID", null);
-    Session.set("currentView", "startMenu");
-    return;
-  }
-
-  if (game.state === "inProgress") {
-    Session.set("currentView", "gameView");
-  } else if (game.state === "waitingForPlayers") {
-    Session.set("currentView", "lobby");
-  }
-}
-
-function leaveGame() {
-  let player = getCurrentPlayer();
-
-  let game = getCurrentGame();
-  let currentTimeRemaining = getTimeRemaining();
-  let players = Array.from(Players.find({ gameID: game._id }));
-  
-  let gameAnalytics = {
-    gameID: game._id,
-    playerCount: players.length,
-    timeLeft: currentTimeRemaining/1000/60,
-    status: "left game",
-  };
-
-  Analytics.insert(gameAnalytics);
-
-  Session.set("currentView", "startMenu");
-  Players.remove(player._id);
-
-  Session.set("playerID", null);
-}
+import {
+  initUserLanguage,
+  getUserLanguage,
+  setUserLanguage,
+  getLanguageDirection,
+  getLanguageList,
+} from "./language";
+import {
+  getCurrentGame,
+  getAccessLink,
+  getCurrentPlayer,
+  generateAccessCode,
+  generateNewGame,
+  generateNewPlayer,
+  leaveGame,
+  resetUserState,
+  trackGameState,
+} from "./game";
+import { shuffle, shuffleArray, getRandomWords } from "./shuffle";
 
 function hasHistoryApi() {
   return !!(window.history && window.history.pushState);
 }
 
+// from here
+
+Handlebars.registerHelper("toCapitalCase", function (str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+});
+
 initUserLanguage();
 
 Meteor.setInterval(function () {
-  Session.set('time', new Date());
+  Session.set("time", new Date());
 }, 1000);
 
 if (hasHistoryApi()) {
   function trackUrlState() {
     let accessCode = null;
     let game = getCurrentGame();
+
     if (game) {
       accessCode = game.accessCode;
     } else {
-      accessCode = Session.get('urlAccessCode');
+      accessCode = Session.get("urlAccessCode");
     }
 
-    let currentURL = '/';
+    let currentURL = "/";
     if (accessCode) {
-      currentURL += accessCode + '/';
+      currentURL += accessCode + "/";
     }
     window.history.pushState(null, null, currentURL);
   }
-  Tracker.autorun(trackUrlState);
+  //Tracker.autorun(trackUrlState); //this is called right after anyway, no need to do it twice
 }
+
 Tracker.autorun(trackGameState);
 
 FlashMessages.configure({
   autoHide: true,
-  autoScroll: false
+  autoScroll: false,
 });
 
 Template.main.helpers({
   whichView: function () {
-    return Session.get('currentView');
+    return Session.get("currentView");
   },
   language: function () {
     return getUserLanguage();
   },
   textDirection: function () {
     return getLanguageDirection();
-  }
+  },
 });
 
 Template.footer.helpers({
-  languages: getLanguageList
+  languages: getLanguageList,
 });
 
 Template.footer.events({
-  'click .btn-set-language': function (event) {
-    let language = $(event.target).data('language');
+  "click .btn-set-language": function (event) {
+    let language = $(event.target).data("language");
     setUserLanguage(language);
   },
-  'change .language-select': function (event) {
+  "change .language-select": function (event) {
     let language = event.target.value;
     setUserLanguage(language);
-  }
+  },
 });
 
 Template.startMenu.events({
-  'click #btn-new-game': function () {
+  "click #btn-new-game": function () {
     Session.set("currentView", "createGame");
-    let referrer  = document.referrer;
+    let referrer = document.referrer;
     let referrerAnalytics = {
       cameFrom: referrer,
-      action: "New Game"
+      action: "New Game",
     };
 
     Analytics.insert(referrerAnalytics);
   },
-  'click #btn-join-game': function () {
-    let referrer  = document.referrer;
+  "click #btn-join-game": function () {
+    let referrer = document.referrer;
     let referrerAnalytics = {
-        cameFrom: referrer,
-        action: "Join Game",
+      cameFrom: referrer,
+      action: "Join Game",
     };
 
     Analytics.insert(referrerAnalytics);
 
     Session.set("currentView", "joinGame");
-  }
+  },
 });
 
 Template.startMenu.helpers({
   alternativeURL: function () {
     return Meteor.settings.public.alternative;
-  }
+  },
 });
 
 Template.startMenu.rendered = function () {
-  let referrer  = document.referrer;
+  let referrer = document.referrer;
   let referrerAnalytics = {
-      cameFrom: referrer,
-      action: "Start Page"
+    cameFrom: referrer,
+    action: "Start Page",
   };
   Analytics.insert(referrerAnalytics);
   resetUserState();
 };
 
 Template.createGame.events({
-  'submit #create-game': function (event) {
-
+  "submit #create-game": function (event) {
     let playerName = event.target.playerName.value;
 
     if (!playerName) {
@@ -393,11 +139,11 @@ Template.createGame.events({
     let game = generateNewGame();
     let player = generateNewPlayer(game, playerName);
 
-    Meteor.subscribe('games', game.accessCode);
+    Meteor.subscribe("games", game.accessCode);
 
     Session.set("loading", true);
 
-    Meteor.subscribe('players', game._id, function onReady() {
+    Meteor.subscribe("players", game._id, function onReady() {
       Session.set("loading", false);
       Session.set("language", getUserLanguage());
       Session.set("gameID", game._id);
@@ -407,16 +153,16 @@ Template.createGame.events({
 
     return false;
   },
-  'click .btn-back': function () {
+  "click .btn-back": function () {
     Session.set("currentView", "startMenu");
     return false;
-  }
+  },
 });
 
 Template.createGame.helpers({
   isLoading: function () {
-    return Session.get('loading');
-  }
+    return Session.get("loading");
+  },
 });
 
 Template.createGame.rendered = function (event) {
@@ -424,7 +170,7 @@ Template.createGame.rendered = function (event) {
 };
 
 Template.joinGame.events({
-  'submit #join-game': function (event) {
+  "submit #join-game": function (event) {
     let accessCode = event.target.accessCode.value;
     let playerName = event.target.playerName.value;
 
@@ -437,25 +183,25 @@ Template.joinGame.events({
 
     Session.set("loading", true);
 
-    Meteor.subscribe('games', accessCode, function onReady() {
+    Meteor.subscribe("games", accessCode, function onReady() {
       Session.set("loading", false);
 
       let game = Games.findOne({
-        accessCode: accessCode
+        accessCode: accessCode,
       });
 
       if (game) {
-        Meteor.subscribe('players', game._id);
+        Meteor.subscribe("players", game._id);
         let player = generateNewPlayer(game, playerName);
 
-        let referrer  = document.referrer;
+        let referrer = document.referrer;
         let referrerAnalytics = {
-            cameFrom: referrer,
-            action: "Join Game",
+          cameFrom: referrer,
+          action: "Join Game",
         };
-      
+
         Analytics.insert(referrerAnalytics);
-        Session.set('urlAccessCode', null);
+        Session.set("urlAccessCode", null);
         Session.set("gameID", game._id);
         Session.set("playerID", player._id);
         Session.set("currentView", "lobby");
@@ -466,32 +212,31 @@ Template.joinGame.events({
 
     return false;
   },
-  'click .btn-back': function () {
-    Session.set('urlAccessCode', null);
+  "click .btn-back": function () {
+    Session.set("urlAccessCode", null);
     Session.set("currentView", "startMenu");
     return false;
-  }
+  },
 });
 
 Template.joinGame.helpers({
   isLoading: function () {
-    return Session.get('loading');
-  }
+    return Session.get("loading");
+  },
 });
-
 
 Template.joinGame.rendered = function (event) {
   resetUserState();
 
-  let referrer  = document.referrer;
+  let referrer = document.referrer;
   let referrerAnalytics = {
-      cameFrom: referrer,
-      action: "Join Game",
+    cameFrom: referrer,
+    action: "Join Game",
   };
 
   Analytics.insert(referrerAnalytics);
 
-  let urlAccessCode = Session.get('urlAccessCode');
+  let urlAccessCode = Session.get("urlAccessCode");
 
   if (urlAccessCode) {
     $("#access-code").val(urlAccessCode);
@@ -520,7 +265,10 @@ Template.lobby.helpers({
       return null;
     }
 
-    let players = Players.find({ 'gameID': game._id }, { 'sort': { 'createdAt': 1 } }).fetch();
+    let players = Players.find(
+      { gameID: game._id },
+      { sort: { createdAt: 1 } }
+    ).fetch();
 
     players.forEach(function (player) {
       if (player._id === currentPlayer._id) {
@@ -529,14 +277,14 @@ Template.lobby.helpers({
     });
 
     return players;
-  }
+  },
 });
 
 Template.lobby.events({
-  'click .btn-leave': leaveGame,
+  "click .btn-leave": leaveGame,
 
   // TODO Maybe this can be deleted, not sure if we want to permit user words
-  'click .btn-submit-user-word': function (event) {
+  "click .btn-submit-user-word": function (event) {
     let game = getCurrentGame();
     let word = document.getElementById("user-word").value;
     let category = document.getElementById("user-category").value;
@@ -547,20 +295,24 @@ Template.lobby.events({
     let userWord = {
       word: word,
       category: category,
-      language: Session.get("language")
+      language: Session.get("language"),
     };
 
-    let questionMasterId = $(event.currentTarget).data('player-id');
-    let currentPlayers = Array.from(Players.find({ gameID: game._id }, { _id: { $ne: questionMasterId } }));
-    let regularPlayers = currentPlayers.filter(player => player._id != questionMasterId);
+    let questionMasterId = $(event.currentTarget).data("player-id");
+    let currentPlayers = Array.from(
+      Players.find({ gameID: game._id }, { _id: { $ne: questionMasterId } })
+    );
+    let regularPlayers = currentPlayers.filter(
+      (player) => player._id != questionMasterId
+    );
 
-    let localEndTime = moment().add(game.lengthInMinutes, 'minutes');
+    let localEndTime = moment().add(game.lengthInMinutes, "minutes");
     let gameEndTime = TimeSync.serverTime(localEndTime);
 
     let fakeArtistIndex = Math.floor(Math.random() * regularPlayers.length);
     let firstPlayerIndex = Math.floor(Math.random() * regularPlayers.length);
 
-    let turnOrders = []
+    let turnOrders = [];
 
     UserWords.insert(userWord);
 
@@ -576,55 +328,63 @@ Template.lobby.events({
           isQuestionMaster: false,
           isFakeArtist: index === fakeArtistIndex,
           isFirstPlayer: index === firstPlayerIndex,
-          turnOrder: turnOrders[index]
-        }
+          turnOrder: turnOrders[index],
+        },
       });
     });
 
-     // All Fake Artist Variant
-    let shouldPlayAllFakeArtistsVariant = document.getElementById("use-all-fake-artists-variant").checked;
+    // All Fake Artist Variant
+    let shouldPlayAllFakeArtistsVariant = document.getElementById(
+      "use-all-fake-artists-variant"
+    ).checked;
 
     let percentEveryoneIsAFakeArtist = 10;
-    let isEveryoneAFakeArtist = Math.floor(Math.random() * 100) < percentEveryoneIsAFakeArtist;
+    let isEveryoneAFakeArtist =
+      Math.floor(Math.random() * 100) < percentEveryoneIsAFakeArtist;
 
-    let isAllFakeArtistsVariantActive = shouldPlayAllFakeArtistsVariant === true && isEveryoneAFakeArtist === true
-    if(isAllFakeArtistsVariantActive){
+    let isAllFakeArtistsVariantActive =
+      shouldPlayAllFakeArtistsVariant === true &&
+      isEveryoneAFakeArtist === true;
+    if (isAllFakeArtistsVariantActive) {
       currentPlayers.forEach(function (player) {
-        if(player.isQuestionMaster === false){
+        if (player.isQuestionMaster === false) {
           Players.update(player._id, {
             $set: {
               isFakeArtist: true,
-            }
+            },
           });
         }
       });
     }
-     // All Fake Artists variant ends
- 
-     // No Fake Artist Variant
-     let shouldPlayNoFakeArtistsVariant = document.getElementById("use-no-fake-artist-variant").checked;
- 
-     let percentNoFakeArtist = 10;
-     let isNoFakeArtist = Math.floor(Math.random() * 100) < percentNoFakeArtist;
- 
-     let isNoFakeArtistsVariantActive = shouldPlayNoFakeArtistsVariant === true && isNoFakeArtist === true
-     if(isNoFakeArtistsVariantActive){
-       currentPlayers.forEach(function (player) {
-         if(player.isQuestionMaster === false){
-           Players.update(player._id, {
-             $set: {
-               isFakeArtist: false,
-             }
-           });
-         }
-       });
-     }
-     // No Fake Artist Variant ends
+    // All Fake Artists variant ends
+
+    // No Fake Artist Variant
+    let shouldPlayNoFakeArtistsVariant = document.getElementById(
+      "use-no-fake-artist-variant"
+    ).checked;
+
+    let percentNoFakeArtist = 10;
+    let isNoFakeArtist = Math.floor(Math.random() * 100) < percentNoFakeArtist;
+
+    let isNoFakeArtistsVariantActive =
+      shouldPlayNoFakeArtistsVariant === true && isNoFakeArtist === true;
+    if (isNoFakeArtistsVariantActive) {
+      currentPlayers.forEach(function (player) {
+        if (player.isQuestionMaster === false) {
+          Players.update(player._id, {
+            $set: {
+              isFakeArtist: false,
+            },
+          });
+        }
+      });
+    }
+    // No Fake Artist Variant ends
     let variantsUsed = [];
-    if(shouldPlayNoFakeArtistsVariant === true){
+    if (shouldPlayNoFakeArtistsVariant === true) {
       variantsUsed.push("no fake-artist");
     }
-    if(shouldPlayAllFakeArtistsVariant === true){
+    if (shouldPlayAllFakeArtistsVariant === true) {
       variantsUsed.push("all fake-artists");
     }
 
@@ -633,7 +393,7 @@ Template.lobby.events({
         isQuestionMaster: true,
         isFakeArtist: false,
         isFirstPlayer: false,
-      }
+      },
     });
 
     currentPlayers.forEach(function (player) {
@@ -643,7 +403,8 @@ Template.lobby.events({
     Players.update(questionMasterId, { $set: { category: category } });
 
     let wordAndCategory = {
-      text: word, category: category
+      text: word,
+      category: category,
     };
 
     let gameAnalytics = {
@@ -657,21 +418,30 @@ Template.lobby.events({
 
     Analytics.insert(gameAnalytics);
 
-    Games.update(game._id, { $set: { state: 'inProgress', word: wordAndCategory, endTime: gameEndTime, paused: false, pausedTime: null, usingAllFakeArtistsVariant: shouldPlayNoFakeArtistsVariant, usingNoFakeArist: shouldPlayNoFakeArtistsVariant } });
+    Games.update(game._id, {
+      $set: {
+        state: "inProgress",
+        word: wordAndCategory,
+        endTime: gameEndTime,
+        paused: false,
+        pausedTime: null,
+        usingAllFakeArtistsVariant: shouldPlayNoFakeArtistsVariant,
+        usingNoFakeArist: shouldPlayNoFakeArtistsVariant,
+      },
+    });
   },
-  'click .btn-start': function () {
-
+  "click .btn-start": function () {
     let game = getCurrentGame();
     let words = getRandomWords();
-    
+
     let currentPlayers = Array.from(Players.find({ gameID: game._id }));
-    let localEndTime = moment().add(game.lengthInMinutes, 'minutes');
+    let localEndTime = moment().add(game.lengthInMinutes, "minutes");
     let gameEndTime = TimeSync.serverTime(localEndTime);
 
     let chameleonIndex = Math.floor(Math.random() * currentPlayers.length);
     let firstPlayerIndex = Math.floor(Math.random() * currentPlayers.length);
 
-    let turnOrders = []
+    let turnOrders = [];
 
     let i = 0;
     while (turnOrders.length < currentPlayers.length) {
@@ -687,12 +457,14 @@ Template.lobby.events({
           isChameleon: index === chameleonIndex,
           isFirstPlayer: index === firstPlayerIndex,
           turnOrder: turnOrders[index] + 1,
-        }
+        },
       });
     });
 
     currentPlayers.forEach(function (player) {
-      Players.update(player._id, { $set: { words:  words.texts, secretWord: words.secretWord } });
+      Players.update(player._id, {
+        $set: { words: words.texts, secretWord: words.secretWord },
+      });
     });
 
     // Track game analytics
@@ -706,9 +478,17 @@ Template.lobby.events({
 
     Analytics.insert(gameAnalytics);
 
-    Games.update(game._id, { $set: { state: 'inProgress', words: words, endTime: gameEndTime, paused: false, pausedTime: null } });
+    Games.update(game._id, {
+      $set: {
+        state: "inProgress",
+        words: words,
+        endTime: gameEndTime,
+        paused: false,
+        pausedTime: null,
+      },
+    });
   },
-  'click #copyAccessLinkImg': function () {
+  "click #copyAccessLinkImg": function () {
     let accessLink = "https://chameleon.herokuapp.com/" + getAccessLink();
 
     const textArea = document.createElement("textarea");
@@ -720,35 +500,35 @@ Template.lobby.events({
     document.body.removeChild(textArea);
 
     let tooltip = document.getElementById("copyAccessLinkTooltip");
-   
+
     tooltip.innerHTML = TAPi18n.__("ui.copied");
   },
-  'mouseout #copyAccessLinkImg': function () {
+  "mouseout #copyAccessLinkImg": function () {
     let tooltip = document.getElementById("copyAccessLinkTooltip");
 
-    tooltip.innerHTML = TAPi18n.__("ui.copy access link");;
+    tooltip.innerHTML = TAPi18n.__("ui.copy access link");
   },
-  'click .btn-toggle-qrcode': function () {
+  "click .btn-toggle-qrcode": function () {
     $(".qrcode-container").toggle();
   },
-  'click .btn-remove-player': function (event) {
-    let playerID = $(event.currentTarget).data('player-id');
+  "click .btn-remove-player": function (event) {
+    let playerID = $(event.currentTarget).data("player-id");
     Players.remove(playerID);
   },
-  'click .btn-edit-player': function (event) {
+  "click .btn-edit-player": function (event) {
     let game = getCurrentGame();
     resetUserState();
-    Session.set('urlAccessCode', game.accessCode);
-    Session.set('currentView', 'joinGame');
+    Session.set("urlAccessCode", game.accessCode);
+    Session.set("currentView", "joinGame");
   },
-  'click .btn-bad-category': function () {
-    console.log('got a bad category');
-    console.log('game.wordAndCategory.category');
+  "click .btn-bad-category": function () {
+    console.log("got a bad category");
+    console.log("game.wordAndCategory.category");
   },
-  'click .btn-bad-word': function () {
-    console.log('got a bad word');
-    console.log('game.wordAndCategory.text');
-  }
+  "click .btn-bad-word": function () {
+    console.log("got a bad word");
+    console.log("game.wordAndCategory.text");
+  },
 });
 
 Template.lobby.rendered = function (event) {
@@ -766,7 +546,7 @@ function getTimeRemaining() {
     let localPausedTime = game.pausedTime - TimeSync.serverOffset();
     timeRemaining = localEndTime - localPausedTime;
   } else {
-    timeRemaining = localEndTime - Session.get('time');
+    timeRemaining = localEndTime - Session.get("time");
   }
 
   if (timeRemaining < 0) {
@@ -787,7 +567,7 @@ Template.gameView.helpers({
     }
 
     let players = Players.find({
-      'gameID': game._id
+      gameID: game._id,
     });
 
     return players;
@@ -803,15 +583,15 @@ Template.gameView.helpers({
   timeRemaining: function () {
     let timeRemaining = getTimeRemaining();
 
-    return moment(timeRemaining).format('mm[<span>:</span>]ss');
-  }
+    return moment(timeRemaining).format("mm[<span>:</span>]ss");
+  },
 });
 
 Template.gameView.events({
-  'click .btn-leave': leaveGame,
-  'click .btn-end': function () {
+  "click .btn-leave": leaveGame,
+  "click .btn-end": function () {
     let game = getCurrentGame();
-    Games.update(game._id, { $set: { state: 'waitingForPlayers' } });
+    Games.update(game._id, { $set: { state: "waitingForPlayers" } });
 
     let currentTimeRemaining = getTimeRemaining();
 
@@ -820,24 +600,28 @@ Template.gameView.events({
     let gameAnalytics = {
       gameID: game._id,
       playerCount: players.length,
-      timeLeft: currentTimeRemaining/1000/60,
+      timeLeft: currentTimeRemaining / 1000 / 60,
       status: "game ended",
     };
-  
+
     Analytics.insert(gameAnalytics);
   },
-  'click .btn-toggle-status': function () {
+  "click .btn-toggle-status": function () {
     $(".status-container-content").toggle();
   },
-  'click .game-countdown': function () {
+  "click .game-countdown": function () {
     let game = getCurrentGame();
     let currentServerTime = TimeSync.serverTime(moment());
 
     if (game.paused) {
       let newEndTime = game.endTime - game.pausedTime + currentServerTime;
-      Games.update(game._id, { $set: { paused: false, pausedTime: null, endTime: newEndTime } });
+      Games.update(game._id, {
+        $set: { paused: false, pausedTime: null, endTime: newEndTime },
+      });
     } else {
-      Games.update(game._id, { $set: { paused: true, pausedTime: currentServerTime } });
+      Games.update(game._id, {
+        $set: { paused: true, pausedTime: currentServerTime },
+      });
     }
-  }
+  },
 });
