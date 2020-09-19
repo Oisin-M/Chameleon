@@ -22,7 +22,17 @@ function hasHistoryApi() {
   return !!(window.history && window.history.pushState);
 }
 
-// from here
+Handlebars.registerHelper('ifEquals', function (a, b) {
+  return (a === b);
+});
+
+Handlebars.registerHelper('and', function (a, b) {
+  return (a && b);
+});
+
+Handlebars.registerHelper('not', function (a) {
+  return !a;
+});
 
 Handlebars.registerHelper("toCapitalCase", function (str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
@@ -432,7 +442,7 @@ Template.lobby.events({
   },
   "click .btn-start": function () {
     let game = getCurrentGame();
-    let words = getRandomWords();
+    let chosenWords = getRandomWords();
 
     let currentPlayers = Array.from(Players.find({ gameID: game._id }));
     let localEndTime = moment().add(game.lengthInMinutes, "minutes");
@@ -461,12 +471,6 @@ Template.lobby.events({
       });
     });
 
-    currentPlayers.forEach(function (player) {
-      Players.update(player._id, {
-        $set: { words: words.texts, secretWord: words.secretWord },
-      });
-    });
-
     // Track game analytics
     let gameAnalytics = {
       gameID: game._id,
@@ -481,7 +485,8 @@ Template.lobby.events({
     Games.update(game._id, {
       $set: {
         state: "inProgress",
-        words: words,
+        words: chosenWords,
+        secretWord: chosenWords.secretWord,
         endTime: gameEndTime,
         paused: false,
         pausedTime: null,

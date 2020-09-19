@@ -183,14 +183,6 @@
           <div class="status-container-content">
             {{#if player.isChameleon }}
             <div class="player-status player-status-chameleon"> {{_ "ui.you are the chameleon" }}</div>
-            <div class="current-role">
-              <div class="current-role-header">
-                {{_ "ui.the category" }}:
-              </div>
-              <div class="current-role-name">
-                <strong>{{_ player.category }}</strong>
-              </div>
-            </div>
             {{else}}
               <div class="player-status player-status-not-chameleon">{{{_ "ui.you are not the chameleon" }}}</div>
 
@@ -203,17 +195,15 @@
                   </div>
                 </div>
                 {{/if}}
-                {{#each game.words }}
-                  insert wordlist here
-              <div class="current-category">
-                <div class="current-category-header">
-                  {{_ "ui.the category" }}:
-                </div>
-                <div class="current-category-text">
-                  {{toCapitalCase texts }}
-                </div>
-              </div>
-              {{/each}}
+                {{#each game.words.words }}
+                  <div class="current-category-text">
+                  {{#if (and (not player.isChameleon) (ifEquals text game.secretWord)) }}
+                    <span style="color:red;">-- {{toCapitalCase text}} --</span>
+                  {{else}}
+                    {{toCapitalCase text}}
+                  {{/if}}
+                  </div>
+                {{/each}}
 
           </div>
         </td>

@@ -30,13 +30,12 @@ export function getRandomWords() {
 
   wordsFromChosenCategory = shuffle(wordsFromChosenCategory);
   let chosenWords = wordsFromChosenCategory.slice(0, 16);
-  let words = chosenWords.map((word) => word.text);
-  words = Array.from(words);
+  let words = Array.from(chosenWords);
   let secretWordIndex = Math.floor(Math.random() * words.length);
-  let secretWord = words[secretWordIndex];
+  let secretWord = words[secretWordIndex].text;
 
   let result = {
-    texts: words,
+    words: words,
     secretWord: secretWord,
   };
 
