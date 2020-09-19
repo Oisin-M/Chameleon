@@ -99,6 +99,8 @@ export function leaveGame() {
   Players.remove(player._id);
 
   Session.set("playerID", null);
+
+  window.history.pushState("lobby", "Left Game", "/");
 }
 
 export function trackGameState() {

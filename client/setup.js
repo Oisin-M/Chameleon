@@ -98,6 +98,8 @@ Template.createGame.events({
       Session.set("currentView", "lobby");
     });
 
+    window.history.pushState("lobby", "Create Lobby", "/" + game.accessCode);
+
     return false;
   },
   "click .btn-back": function () {
@@ -149,6 +151,8 @@ Template.joinGame.events({
       } else {
         FlashMessages.sendError(TAPi18n.__("ui.invalid access code"));
       }
+
+      window.history.pushState("lobby", "Join Lobby", "/" + game.accessCode);
     });
 
     return false;
