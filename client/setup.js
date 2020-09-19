@@ -104,6 +104,7 @@ Template.createGame.events({
   },
   "click .btn-back": function () {
     Session.set("currentView", "startMenu");
+    window.history.pushState("lobby", "Back", "/");
     return false;
   },
 });
@@ -160,6 +161,7 @@ Template.joinGame.events({
   "click .btn-back": function () {
     Session.set("urlAccessCode", null);
     Session.set("currentView", "startMenu");
+    window.history.pushState("lobby", "Back", "/");
     return false;
   },
 });
