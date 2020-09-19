@@ -262,19 +262,22 @@
                 {{_ "ui.the word" }}:
               </div>
               <div class="current-word-text">
-                <strong>{{toCapitalCase game.secretWord }}</strong>
+                <strong>{{toCapitalCase game.words.secretWord }}</strong>
               </div>
             </div>
-            {{/if}} {{ #each words }}
-            <div class="current-category">
-              <div class="current-category-header">
-                {{_ "ui.the category" }}: {{toCapitalCase category}}
+            {{/if}}
+            <div id="word-grid">
+              {{ #each game.words.words }}
+              <div class="current-category">
+                <div class="current-category-text">
+                  {{toCapitalCase text }}
+                </div>
+                <div class="current-category-header">
+                  {{_ "ui.the category" }}: {{toCapitalCase category}}
+                </div>
               </div>
-              <div class="current-category-text">
-                {{toCapitalCase text }}
-              </div>
+              {{/each}}
             </div>
-            {{/each}}
           </div>
         </td>
       </tr>
