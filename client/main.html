@@ -229,51 +229,59 @@
 
   <div class="status-container">
     <button class="btn-toggle-status">{{_ "ui.show hide" }}</button>
+
     <table>
       <tr>
-        <td class="status-container-content">
+        <div class="status-container-content">
           {{#if player.isChameleon }}
           <img src="/img/chameleon.png" width="80px" height="80px" />
           {{else }}
           <img src="/img/regular.png" width="80px" height="80px" />
-          {{/if}}
-        </td>
-        <td>
-          <div class="status-container-content">
-            {{#if player.isChameleon }}
-            <div class="player-status player-status-chameleon">
-              {{_ "ui.you are the chameleon" }}
+          {{/if}} {{#if player.isChameleon }}
+          <div class="player-status player-status-chameleon">
+            {{_ "ui.you are the chameleon" }}
+          </div>
+          <div class="current-role">
+            <div class="current-role-header">
+              {{_ "ui.the category" }}:
             </div>
-            <div class="current-role">
-              <div class="current-role-header">
-                {{_ "ui.the category" }}:
-              </div>
-              <div class="current-role-name">
-                <strong>{{_ player.category }}</strong>
-              </div>
+            <div class="current-role-name">
+              <strong>{{ toCapitalCase game.words.category }}</strong>
             </div>
-            {{else}}
-            <div class="player-status player-status-not-chameleon">
-              {{{_ "ui.you are not the chameleon" }}}
-            </div>
+          </div>
+          {{else}}
+          <div class="player-status player-status-not-chameleon">
+            {{{_ "ui.you are not the chameleon" }}}
+          </div>
 
-            <div class="current-word">
-              <div class="current-word-header">
-                {{_ "ui.the word" }}:
-              </div>
-              <div class="current-word-text">
-                <strong>{{toCapitalCase game.words.secretWord }}</strong>
-              </div>
+          <div class="current-role">
+            <div class="current-role-header">
+              {{_ "ui.the category" }}:
             </div>
-            {{/if}}
+            <div class="current-role-name">
+              <strong>{{ toCapitalCase game.words.category }}</strong>
+            </div>
+          </div>
+
+          <div class="current-word">
+            <div class="current-word-header">
+              {{_ "ui.the word" }}:
+            </div>
+            <div class="current-word-text">
+              <strong>{{toCapitalCase game.words.secretWord }}</strong>
+            </div>
+          </div>
+          {{/if}}
+        </div>
+      </tr>
+      <tr>
+        <td class="table-grid">
+          <div class="status-container-content">
             <div id="word-grid">
               {{ #each game.words.words }}
               <div class="current-category">
                 <div class="current-category-text">
                   {{toCapitalCase text }}
-                </div>
-                <div class="current-category-header">
-                  {{_ "ui.the category" }}: {{toCapitalCase category}}
                 </div>
               </div>
               {{/each}}

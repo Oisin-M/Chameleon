@@ -4,10 +4,27 @@
   -ms-grid-columns: 1fr 1fr 1fr 1fr;
   grid-template-columns: repeat(4, 1fr);
   -ms-grid-rows: 100px 100px 100px 100px;
-  grid-template-rows: repeat(12, 100px);
+  grid-template-rows: repeat(4, 100px);
   grid-gap: 30px;
 }
 
 .current-category {
   background-color: yellow;
+}
+
+.current-category-text {
+  margin: 0;
+  position: relative;
+  top: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+
+.table-grid {
+  width: 100%;
+  text-align: center;
+}
+
+table {
+  width: 100% !important;
 }

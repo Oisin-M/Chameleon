@@ -21,17 +21,18 @@ export function shuffleArray(array) {
 
 export function getRandomWords() {
   let filteredWords = getWordsProvider();
-  //IGNORE CATEGORIES FOR NOW
-  // let wordIndex = Math.floor(Math.random() * filteredWords.length);
-  //
-  // let chosenCategory = filteredWords[wordIndex].category;
-  // let wordsFromChosenCategory = filteredWords.filter(
-  //   (word) => word.category == chosenCategory
-  // );
+  let wordIndex = Math.floor(Math.random() * filteredWords.length);
 
-  filteredWords = shuffle(filteredWords);
-  let chosenWords = filteredWords.slice(0, 48);
-  // let words = chosenWords.map((word) => word.text);
+  let chosenCategory = filteredWords[wordIndex].category;
+  let wordsFromChosenCategory = filteredWords.filter(
+    (word) => word.category == chosenCategory
+  );
+
+  wordsFromChosenCategory = shuffle(wordsFromChosenCategory);
+  let chosenWords = wordsFromChosenCategory.slice(0, 16);
+  // let words = chosenWords.map((word) => {
+  //   text: word.text;
+  // });
   // words = Array.from(words);
   let secretWordIndex = Math.floor(Math.random() * chosenWords.length);
   let secretWord = chosenWords[secretWordIndex].text;
@@ -39,8 +40,8 @@ export function getRandomWords() {
   let result = {
     words: chosenWords,
     secretWord: secretWord,
+    category: chosenCategory,
   };
-  console.log(result);
 
   return result;
 }
