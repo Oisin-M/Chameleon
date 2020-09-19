@@ -41,7 +41,7 @@ export function generateNewGame() {
     accessCode: generateAccessCode(),
     state: "waitingForPlayers",
     word: null,
-    lengthInMinutes: 10,
+    lengthInMinutes: 1,
     endTime: null,
     paused: false,
     pausedTime: null,
