@@ -15,6 +15,7 @@ import {
   leaveGame,
   resetUserState,
   trackGameState,
+  getTimeRemaining,
 } from "./game";
 import { shuffle, shuffleArray, getRandomWords } from "./shuffle";
 
@@ -537,24 +538,6 @@ Template.lobby.rendered = function (event) {
   let qrcodesvg = new Qrcodesvg(url, "qrcode", 250);
   qrcodesvg.draw();
 };
-
-function getTimeRemaining() {
-  let game = getCurrentGame();
-  let localEndTime = game.endTime - TimeSync.serverOffset();
-  let timeRemaining;
-  if (game.paused) {
-    let localPausedTime = game.pausedTime - TimeSync.serverOffset();
-    timeRemaining = localEndTime - localPausedTime;
-  } else {
-    timeRemaining = localEndTime - Session.get("time");
-  }
-
-  if (timeRemaining < 0) {
-    timeRemaining = 0;
-  }
-
-  return timeRemaining;
-}
 
 Template.gameView.helpers({
   game: getCurrentGame,

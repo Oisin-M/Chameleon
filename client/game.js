@@ -125,3 +125,21 @@ export function trackGameState() {
     Session.set("currentView", "lobby");
   }
 }
+
+export function getTimeRemaining() {
+  let game = getCurrentGame();
+  let localEndTime = game.endTime - TimeSync.serverOffset();
+  let timeRemaining;
+  if (game.paused) {
+    let localPausedTime = game.pausedTime - TimeSync.serverOffset();
+    timeRemaining = localEndTime - localPausedTime;
+  } else {
+    timeRemaining = localEndTime - Session.get("time");
+  }
+
+  if (timeRemaining < 0) {
+    timeRemaining = 0;
+  }
+
+  return timeRemaining;
+}
