@@ -61,6 +61,7 @@ export function generateNewPlayer(game, name) {
     isQuestionMaster: false,
     isFakeArtist: false,
     isFirstPlayer: false,
+    clue: null,
   };
 
   let playerID = Players.insert(player);

@@ -1,4 +1,5 @@
 import {
+  getCurrentPlayer,
   getCurrentGame,
   getAccessLink,
   leaveGame,
@@ -154,6 +155,35 @@ Template.gameView.events({
       Games.update(game._id, {
         $set: { paused: true, pausedTime: currentServerTime },
       });
+    }
+  },
+  "click #clue-button-submit": function (event) {
+    var input = $("#clue-input");
+    var inputText = input.val();
+    if (inputText.length > 0) {
+      $("#clue-submission").hide();
+      var player = getCurrentPlayer();
+
+      Players.update(player._id, {
+        $set: { clue: inputText },
+      });
+
+      var game = getCurrentGame();
+      let players = Array.from(Players.find({ gameID: game._id }));
+
+      var allsubmitted = true;
+      for (i = 0; i < players.length; i++) {
+        if (!players[i].clue) {
+          allsubmitted = false;
+          break;
+        }
+      }
+
+      if (allsubmitted) {
+        Session.set("currentView", "Voting");
+        console.log("Everyone submitted a clue");
+        console.log(Session.get("currentView"));
+      }
     }
   },
 });

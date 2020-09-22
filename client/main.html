@@ -290,6 +290,25 @@
         </td>
       </tr>
     </table>
+
+    <form id="clue-submission">
+      <div class="clue-input-container">
+        <input
+          type="text"
+          id="clue-input"
+          name="clueInput"
+          placeholder='{{_ "ui.give your clue" }}'
+        />
+
+        <div class="button-container">
+          <input
+            id="clue-button-submit"
+            type="button"
+            value='{{_ "ui.submit" }}'
+          />
+        </div>
+      </div>
+    </form>
   </div>
 
   <h5>{{_ "ui.players" }}</h5>
@@ -334,6 +353,10 @@
       /></a>
     </div>
   </noscript>
+</template>
+
+<template name="Voting">
+  <h1>Voting</h1>
 </template>
 
 <template name="createGame">
