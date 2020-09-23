@@ -126,6 +126,8 @@ export function trackGameState() {
     Session.set("currentView", "gameView");
   } else if (game.state === "waitingForPlayers") {
     Session.set("currentView", "lobby");
+  } else if (game.state === "voting") {
+    Session.set("currentView", "voting");
   }
 }
 

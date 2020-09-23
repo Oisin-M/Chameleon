@@ -140,7 +140,7 @@ Template.gameView.events({
     Analytics.insert(gameAnalytics);
   },
   "click .btn-toggle-status": function () {
-    $(".status-container-content").toggle();
+    $(".table-content").toggle();
   },
   "click .game-countdown": function () {
     let game = getCurrentGame();
@@ -180,10 +180,19 @@ Template.gameView.events({
       }
 
       if (allsubmitted) {
-        Session.set("currentView", "Voting");
         console.log("Everyone submitted a clue");
-        console.log(Session.get("currentView"));
+        Games.update(game._id, {
+          $set: {
+            state: "voting",
+          },
+        });
       }
     }
+  },
+});
+
+Template.voting.events({
+  "click .btn-toggle-status": function () {
+    $(".table-content").toggle();
   },
 });

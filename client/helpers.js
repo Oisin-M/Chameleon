@@ -107,3 +107,34 @@ Template.gameView.helpers({
     return moment(timeRemaining).format("mm[<span>:</span>]ss");
   },
 });
+
+Template.voting.helpers({
+  game: getCurrentGame,
+  player: getCurrentPlayer,
+  players: function () {
+    let game = getCurrentGame();
+
+    if (!game) {
+      return null;
+    }
+
+    let players = Players.find({
+      gameID: game._id,
+    });
+
+    return players;
+  },
+  words: function () {
+    return words_en;
+  },
+  // gameFinished: function () {
+  //   let timeRemaining = getTimeRemaining();
+  //
+  //   return timeRemaining === 0;
+  // },
+  // timeRemaining: function () {
+  //   let timeRemaining = getTimeRemaining();
+  //
+  //   return moment(timeRemaining).format("mm[<span>:</span>]ss");
+  // },
+});

@@ -276,7 +276,7 @@
       </tr>
       <tr>
         <td class="table-grid">
-          <div class="status-container-content">
+          <div class="table-content">
             <div id="word-grid">
               {{ #each game.words.words }}
               <div class="current-category">
@@ -355,8 +355,101 @@
   </noscript>
 </template>
 
-<template name="Voting">
-  <h1>Voting</h1>
+<template name="voting">
+  <h4>
+    <a
+      href="#"
+      class="game-countdown {{#if gameFinished }}finished{{/if}} {{#if game.paused }}paused{{/if}}"
+      >{{{ timeRemaining }}}</a
+    >
+  </h4>
+
+  <div class="status-container">
+    <button class="btn-toggle-status">{{_ "ui.show hide" }}</button>
+
+    <table>
+      <tr>
+        <div class="status-container-content">
+          {{#if player.isChameleon }}
+          <img src="/img/chameleon-colour.png" width="80px" height="80px" />
+          {{else }}
+          <img src="/img/regular.png" width="80px" height="80px" />
+          {{/if}} {{#if player.isChameleon }}
+          <div class="player-status player-status-chameleon">
+            {{_ "ui.you are the chameleon" }}
+          </div>
+          <div class="current-role">
+            <div class="current-role-header">
+              {{_ "ui.the category" }}:
+            </div>
+            <div class="current-role-name">
+              <strong>{{ toCapitalCase game.words.category }}</strong>
+            </div>
+          </div>
+          {{else}}
+          <div class="player-status player-status-not-chameleon">
+            {{{_ "ui.you are not the chameleon" }}}
+          </div>
+
+          <div class="current-role">
+            <div class="current-role-header">
+              {{_ "ui.the category" }}:
+            </div>
+            <div class="current-role-name">
+              <strong>{{ toCapitalCase game.words.category }}</strong>
+            </div>
+          </div>
+
+          <div class="current-word">
+            <div class="current-word-header">
+              {{_ "ui.the word" }}:
+            </div>
+            <div class="current-word-text">
+              <strong>{{toCapitalCase game.words.secretWord }}</strong>
+            </div>
+          </div>
+          {{/if}}
+        </div>
+      </tr>
+      <tr>
+        <td class="table-grid">
+          <div class="table-content">
+            <div id="word-grid">
+              {{ #each game.words.words }}
+              <div class="current-category">
+                <div class="current-category-text">
+                  {{toCapitalCase text }}
+                </div>
+              </div>
+              {{/each}}
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <h5>{{_ "ui.players" }}</h5>
+  <ul class="ingame-player-list">
+    {{#each players }}
+    <li>
+      <div class="player-name">
+        {{ name }}
+        <div class="first-player-indicator">{{ turnOrder }}</div>
+        <span class="clue">{{ clue }}</span>
+      </div>
+    </li>
+    {{/each}}
+  </ul>
+
+  <div class="u-cf"></div>
+
+  <hr />
+
+  <div class="button-container">
+    <button class="btn-end">{{_ "ui.end game" }}</button>
+    <button class="btn-leave">{{_ "ui.leave game" }}</button>
+  </div>
 </template>
 
 <template name="createGame">
