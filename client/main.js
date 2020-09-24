@@ -192,7 +192,28 @@ Template.gameView.events({
 });
 
 Template.voting.events({
+  "click .btn-leave": leaveGame,
+  "click .btn-end": function () {
+    let game = getCurrentGame();
+    Games.update(game._id, { $set: { state: "waitingForPlayers" } });
+
+    let currentTimeRemaining = getTimeRemaining();
+
+    let players = Array.from(Players.find({ gameID: game._id }));
+
+    let gameAnalytics = {
+      gameID: game._id,
+      playerCount: players.length,
+      timeLeft: currentTimeRemaining / 1000 / 60,
+      status: "game ended",
+    };
+
+    Analytics.insert(gameAnalytics);
+  },
   "click .btn-toggle-status": function () {
     $(".table-content").toggle();
+  },
+  "click .vote-button": function () {
+    console.log("voted");
   },
 });
