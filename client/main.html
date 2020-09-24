@@ -414,8 +414,10 @@
       <div class="player-name">
         {{ name }}
         <div class="first-player-indicator">{{ turnOrder }}</div>
-        <button class="vote-button">{{_ "ui.its him" }}</button>
-        <div class="clue">{{ clue }}</div>
+        <span class="clue">« {{ clue }} »</span>
+        <button class="vote-button" data-id="{{_id}}" data-name="{{name}}">
+          {{_ "ui.its him" }}
+        </button>
       </div>
     </li>
     {{/each}}

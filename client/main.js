@@ -214,6 +214,6 @@ Template.voting.events({
     $(".table-content").toggle();
   },
   "click .vote-button": function () {
-    console.log("voted");
+    console.log("Voted for " + $(".vote-button").data("name"));
   },
 });
