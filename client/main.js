@@ -213,7 +213,9 @@ Template.voting.events({
   "click .btn-toggle-status": function () {
     $(".table-content").toggle();
   },
-  "click .vote-button": function () {
-    console.log("Voted for " + $(".vote-button").data("name"));
+  "click .vote-button": function (event) {
+    let playerID = $(event.currentTarget).data("id");
+    let playerName = $(event.currentTarget).data("name");
+    console.log(playerName);
   },
 });
